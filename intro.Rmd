@@ -26,7 +26,6 @@ $$
 We have three parameters $\beta_0, \beta_1, \sigma$ in this simple linear model. 
 
 
-
 ```{r}
 set.seed(1234)
 N <- 50
@@ -49,6 +48,7 @@ dat %>%
   geom_line()
 
 cor.test(x, y)
+
 ```
 
 ## One dimensional autocorrelation
@@ -56,17 +56,18 @@ cor.test(x, y)
 - Previous observation(s) affects the current observation.
 - Temporal autocorrelation is this type of the autocorrelation.
 
-![moge](images/1D_auto.png)
+![](images/1D_auto.png)
 
 $$
-x_i = \mu_x +\epsilon_{xi} \\
-y_i = \mu_y +\epsilon_{yi} \\
-\epsilon_{y,i+1} \sim N(\epsilon_{y,i}, \phi_y) \\
-\epsilon_{x,i+1} \sim N(\epsilon_{x,i}, \phi_x)
+x_i = x_{i-1} + \epsilon_{x} \\
+y_i = y_{i-1} + \epsilon_{y} \\
+\epsilon_{y} \sim N(0, \sigma_y) \\
+\epsilon_{x} \sim N(0, \sigma_x)
 $$
 
 
 ```{r}
+set.seed(25)
 N <- 50
 x <- y <- NULL
 x[1] <- 0
@@ -76,6 +77,13 @@ for (i in 1:(N-1)) {
   y[i + 1] <- rnorm(1, y[i], 0.8)
   x[i + 1] <- rnorm(1, x[i], 0.8)
 }
+
+y <- cumsum(rnorm(N))
+x <- cumsum(rnorm(N))
+
+#acf(y, type = "correlation")
+#cor(y[-1], y[-50])
+#cor(y[-1:-2], y[-50:-49])
 
 dat <- tibble(x, y, n = seq(1, N))
 
@@ -94,8 +102,7 @@ cor.test(x, y)
 - We got a strong correlation for the two variables that are supposed to be
   independent.
 
-```{r}
-
+```{r, eval=FALSE, echo=FALSE}
 N <- 50
 r <- NULL
 for (j in 1:200) {

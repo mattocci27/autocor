@@ -3,12 +3,12 @@
 
 # Likelihood methods
 
+- Estimating parameters that most likely to produce the observed data (in a given probability distribution).
 
-```r
-library(tidyverse)
-```
 
 ## Likelihood 
+
+- Let's consier a simple example where the obsrervaions (y) follow the Poisson distribution.
 
 $$
 y_i ~\sim Pois(\lambda) \\
@@ -26,7 +26,7 @@ $$
 
 
 - Probability of $y_i$ observed when mean = $\lambda$ 
-- Likelihood L($\lambda$) = (probability of $y_1$ = 2) $\times$ (probability of $y_2$ = 5) $\times \cdots \times$ (probability of $y_{100}$ = 3) 
+- Likelihood L($\lambda$) = (probability of $y_1$ = 2 when mean = $\lambda$ ) $\times$ (probability of $y_2$ = 5 when mean = $\lambda$ ) $\times \cdots \times$ (probability of $y_{100}$ = 3 when mean = $\lambda$ ) 
 
 
 $$
@@ -61,12 +61,22 @@ $$
 <img src="like_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" />
 
 
+```r
+fit <- glm(y ~ 1, family = "poisson") 
+fit[[1]] %>% exp
+#> (Intercept) 
+#>        3.49
+```
+
+
 ### Simulation approaches
 
 - Markov chain Monte Carlo (MCMC)
   - Bayesian
 
-![](images/Hplt5.gif)
+
+
+![](pois.gif)
 
 
 ## Linear models (LMs)
@@ -84,9 +94,14 @@ y_i = \beta_0 + \beta_1 x_i +\epsilon_i \\
 \epsilon_i \sim N(0, \sigma)
 $$
 
+```
+lm(y ~ x, data = ... )
+```
+
 ## Generalized Linear models (GLMs)
 
-- Models assume exponential family distributions in their error terms.
+- Models assume exponential family distributions (e.g., Poisson, Gamma,
+  Binomial, Negative-binomial,...) in their error terms.
 
 $$
 log\lambda_i = \beta_0 + \beta_1 x_i \\
@@ -94,10 +109,17 @@ y_i \sim Pois(\lambda_i)
 $$
 
 
+```
+# poisson distribution and log link function
+glm(y ~ x, data = ..., family = "poisson")
+```
+
 ## Generalized Linear mixed models (GLMMs)
 
+### Independent errors
+
 - Models assume exponential family distributions in their error terms 
-- Error terms also have independent different means among groups.
+- Error terms also have different means among groups.
 
 $$
 y_{ij} = \beta_0 + \beta_1 x_{ij} +\epsilon_i + r_j\\
@@ -105,3 +127,12 @@ y_{ij} = \beta_0 + \beta_1 x_{ij} +\epsilon_i + r_j\\
 r_j \sim N(0, \phi)
 $$
 
+
+```
+lme4::lmer(y ~ x + (x | group), data = ...)
+```
+
+### Dependent errors
+
+- Error terms are sometimes dependent (correlated) among groups.
+- We will learn this today (if we have a time).

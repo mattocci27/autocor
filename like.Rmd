@@ -5,11 +5,15 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 
 # Likelihood methods
 
-```{r message = FALSE, warning = FALSE}
+- Estimating parameters that most likely to produce the observed data (in a given probability distribution).
+```{r message = FALSE, warning = FALSE, echo=FALSE}
 library(tidyverse)
+library(animation)
 ```
 
 ## Likelihood 
+
+- Let's consier a simple example where the obsrervaions (y) follow the Poisson distribution.
 
 $$
 y_i ~\sim Pois(\lambda) \\
@@ -38,7 +42,7 @@ tibble(x = xx, y = p) %>%
 ```
 
 - Probability of $y_i$ observed when mean = $\lambda$ 
-- Likelihood L($\lambda$) = (probability of $y_1$ = `r y[1]`) $\times$ (probability of $y_2$ = `r y[2]`) $\times \cdots \times$ (probability of $y_{100}$ = `r y[100]`) 
+- Likelihood L($\lambda$) = (probability of $y_1$ = `r y[1]` when mean = $\lambda$ ) $\times$ (probability of $y_2$ = `r y[2]` when mean = $\lambda$ ) $\times \cdots \times$ (probability of $y_{100}$ = `r y[100]` when mean = $\lambda$ ) 
 
 
 $$
@@ -50,7 +54,7 @@ logL(\lambda) = \Sigma log(Pois(y_i | \lambda))
 $$
 
 
-```{r, echo=FALSE, fig.height=14}
+```{r, echo=FALSE, fig.height=10}
 
 lambda_ <- seq(1.5, by = 0.4, length  = 9)
 dat <- sapply(lambda_, function(x) dpois(xx, x)) %>%
@@ -112,14 +116,18 @@ tibble(lambda = lambda_seq, logL) %>%
             label = str_c("lambda = ", mean(y)))
 ```
 
+```{r, echo=TRUE}
+fit <- glm(y ~ 1, family = "poisson") 
+fit[[1]] %>% exp
+```
 
-### Simulation approaches (check)
+
+### Simulation approaches
 
 - Markov chain Monte Carlo (MCMC)
   - Bayesian
 
-```{r}
-######## Metropolis algorithm ################
+```{r,eval=FALSE, echo=FALSE}
 
 proposalfunction <- function(param){
     rpois(1, param)
@@ -130,8 +138,6 @@ posterior <- function(param){
 }
 
 run_metropolis_MCMC <- function(startvalue, iterations){
-#    chain = array(dim = c(iterations+1,3))
-#    chain[1,] = startvalue
    chain <- NULL
    chain[1] <- startvalue
     for (i in 1:iterations){
@@ -147,15 +153,34 @@ run_metropolis_MCMC <- function(startvalue, iterations){
     return(chain)
 }
 
-chain <- run_metropolis_MCMC(100, 100)
-tibble(x = chain, y = chain) %>%
-  ggplot(., aes(x = x, y = y)) +
-  geom_point()
+iter <- 100
+chain <- run_metropolis_MCMC(100, iter)
+
+chain_dat <- tibble(chain = chain[-1], n = 1:iter)
+
+pois_frame <- function(n, data) {
+  pt_dat <- data %>%
+   head(n)
+  plt <- ggplot(pt_dat, aes(x = n, y = chain)) +
+  geom_point() +
+  geom_line() +
+  xlab("Iteration") +
+  ylab("lambda") +
+  coord_cartesian(xlim = c(1, 80), ylim = c(0, 100)) 
+  print(plt)
+}
+
+saveGIF(
+       lapply(1:80, function(x)pois_frame(x, chain_dat)),
+       interval = 0.05,
+       ani.width = 480,
+       ani.height = 240,
+       movie.name = "pois.gif"
+        )
 
 ```
 
-
-![](images/Hplt5.gif)
+![](pois.gif)
 
 
 ## Linear models (LMs)
@@ -173,9 +198,14 @@ y_i = \beta_0 + \beta_1 x_i +\epsilon_i \\
 \epsilon_i \sim N(0, \sigma)
 $$
 
+```
+lm(y ~ x, data = ... )
+```
+
 ## Generalized Linear models (GLMs)
 
-- Models assume exponential family distributions in their error terms.
+- Models assume exponential family distributions (e.g., Poisson, Gamma,
+  Binomial, Negative-binomial,...) in their error terms.
 
 $$
 log\lambda_i = \beta_0 + \beta_1 x_i \\
@@ -183,10 +213,17 @@ y_i \sim Pois(\lambda_i)
 $$
 
 
+```
+# poisson distribution and log link function
+glm(y ~ x, data = ..., family = "poisson")
+```
+
 ## Generalized Linear mixed models (GLMMs)
 
+### Independent errors
+
 - Models assume exponential family distributions in their error terms 
-- Error terms also have independent different means among groups.
+- Error terms also have different means among groups.
 
 $$
 y_{ij} = \beta_0 + \beta_1 x_{ij} +\epsilon_i + r_j\\
@@ -194,3 +231,12 @@ y_{ij} = \beta_0 + \beta_1 x_{ij} +\epsilon_i + r_j\\
 r_j \sim N(0, \phi)
 $$
 
+
+```
+lme4::lmer(y ~ x + (x | group), data = ...)
+```
+
+### Dependent errors
+
+- Error terms are sometimes dependent (correlated) among groups.
+- We will learn this today (if we have a time).

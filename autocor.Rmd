@@ -1,0 +1,42 @@
+---
+title: Autocorrelation
+author: Masatoshi Katabuchi
+date: "2020/11/2 (updated: `r Sys.Date()`)"
+output:
+#rmdformats::material
+  html_document:
+    fig_caption: yes
+    theme: spacelab #readable #sandstone #spacelab #flatly
+    highlight: pygments #tango #kate
+    toc: TRUE
+    toc_depth: 2
+    number_sections: TRUE
+    toc_float:
+      collapsed: TRUE
+      smooth_scroll: TRUE
+      toc: true
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE,
+                      warning=FALSE,
+                      cache=FALSE,
+                      message=FALSE)
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+```
+
+<a href="https://twitter.com/mattocci"><i class="fa fa-twitter fa-1x"></i> Twittter</a>
+<a href="https://github.com/mattocci27/"><i class="fa fa-github fa-1x"></i> Github</a>
+<a href="mailto:mattocci27@gmail.com"><i class="fa fa-envelope fa-1x"></i> Email</a>
+
+Course materials for 2020-11-2 AFEC at XTBG.
+
+# Prerequisites
+
+Did you install `picante` and `FD`?
+
+```{r, eval = F}
+install.packages("picante")
+install.packages("FD")
+```
+_

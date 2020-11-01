@@ -28,7 +28,6 @@ We have three parameters $\beta_0, \beta_1, \sigma$ in this simple linear model.
 
 
 
-
 ```r
 set.seed(1234)
 N <- 50
@@ -71,18 +70,19 @@ cor.test(x, y)
 - Previous observation(s) affects the current observation.
 - Temporal autocorrelation is this type of the autocorrelation.
 
-![moge](images/1D_auto.png)
+![](images/1D_auto.png)
 
 $$
-x_i = \mu_x +\epsilon_{xi} \\
-y_i = \mu_y +\epsilon_{yi} \\
-\epsilon_{y,i+1} \sim N(\epsilon_{y,i}, \phi_y) \\
-\epsilon_{x,i+1} \sim N(\epsilon_{x,i}, \phi_x)
+x_i = x_{i_1} + \epsilon_{x} \\
+y_i = y_{i_1} + \epsilon_{y} \\
+\epsilon_{y} \sim N(0, \sigma_y) \\
+\epsilon_{x} \sim N(0, \sigma_x)
 $$
 
 
 
 ```r
+set.seed(25)
 N <- 50
 x <- y <- NULL
 x[1] <- 0
@@ -92,6 +92,13 @@ for (i in 1:(N-1)) {
   y[i + 1] <- rnorm(1, y[i], 0.8)
   x[i + 1] <- rnorm(1, x[i], 0.8)
 }
+
+y <- cumsum(rnorm(N))
+x <- cumsum(rnorm(N))
+
+#acf(y, type = "correlation")
+#cor(y[-1], y[-50])
+#cor(y[-1:-2], y[-50:-49])
 
 dat <- tibble(x, y, n = seq(1, N))
 
@@ -109,13 +116,13 @@ cor.test(x, y)
 #> 	Pearson's product-moment correlation
 #> 
 #> data:  x and y
-#> t = 2, df = 48, p-value = 0.05
+#> t = -0.02, df = 48, p-value = 1
 #> alternative hypothesis: true correlation is not equal to 0
 #> 95 percent confidence interval:
-#>  0.00538 0.52060
+#>  -0.281  0.276
 #> sample estimates:
-#>   cor 
-#> 0.283
+#>      cor 
+#> -0.00234
 ```
 
 <img src="intro_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /><img src="intro_files/figure-html/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" />
@@ -124,27 +131,6 @@ cor.test(x, y)
   independent.
 
 
-```r
-
-N <- 50
-r <- NULL
-for (j in 1:200) {
-  x <- y <- NULL
-  x[1] <- 0
-  y[1] <- 0
-
-  for (i in 1:(N-1)) {
-    y[i + 1] <- rnorm(1, y[i], 0.8)
-    x[i + 1] <- rnorm(1, x[i], 0.8)
-  }
-  r[j] <- cor(x, y)
-}
-
-qplot(r)
-#> `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-```
-
-<img src="intro_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" />
 
 
 <img src="intro_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" />
