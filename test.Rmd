@@ -1,0 +1,67 @@
+## Spatial weight matrix
+
+
+```{r}
+library(tidyverse)
+library(spdep)
+```
+
+- Read the dataset.
+```{r, echo=TRUE}
+d <- read_csv("./data/trait_env.csv")
+d
+```
+
+```{r, echo=TRUE}
+(nb <- cell2nb(length(unique(d$x)),length(unique(d$y)), type = "queen"))
+```
+
+```{r, echo=TRUE}
+(W <- nb2listw(nb, zero.policy = TRUE, style = "W"))
+```
+
+## Fit
+
+- Intercept only
+```{r, echo=TRUE}
+fit1 <- spautolm(trait ~ 1, listw = W, data = d)
+
+summary(fit1)
+```
+
+- lambda (rho) = `r fit1$lambda` indicates a positve spatial autocorrelaiton
+
+
+
+- Model with an environmetal predictor
+```{r, echo=TRUE}
+fit2 <- spautolm(trait ~ hab, listw = W, data = d)
+
+summary(fit2)
+```
+- lambda (rho) = `r fit2$lambda` indicates a weak positve spatial autocorrelaiton
+- Negative `habvalley` indicates valley sites have negative effects on trait values compared to ridge sites even after controlling spatial autocorrelaiton.
+
+## Exercise 
+
+- Can you make a raster figure for $\epsilon$? 
+    - `fit1$fit$residuals` is a vector of $\epsilon$.
+    - What does this figure mean?  
+```{r, echo=TRUE, eval=FALSE}
+d2 <- d %>%
+  mutate(trait2 = fit1$fit$residuals) 
+
+ggplot(d2, aes(x = x, y = y, fill = trait2)) +
+    geom_raster()
+```
+- Can you make a violin plot or box plot for $\epsilon$? 
+    - `geom_violin`, `geom_boxplot`
+    - What does this figure mean?  
+
+```{r, echo=TRUE, eval=FALSE}
+d2 %>%
+  ggplot(., aes(x = hab, y = trait2, col = hab)) +
+  geom_violin() +
+  geom_jitter(width = 0.2)
+
+```
