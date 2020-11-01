@@ -1,0 +1,196 @@
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Likelihood methods
+
+```{r message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+## Likelihood 
+
+$$
+y_i ~\sim Pois(\lambda) \\
+$$
+
+
+```{r, echo=FALSE}
+set.seed(123)
+N <- 100 
+lambda <- 3.5
+y <- rpois(N, lambda)
+qplot(y)
+
+xx <- seq(0, 10)
+p <- dpois(xx, lambda)
+
+tibble(y = y, ID = 1:N) %>%
+  DT::datatable(.)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+tibble(x = xx, y = p) %>%
+  ggplot(., aes(x = x, y = y)) +
+  geom_point() + 
+  geom_line(lty = 2)
+```
+
+- Probability of $y_i$ observed when mean = $\lambda$ 
+- Likelihood L($\lambda$) = (probability of $y_1$ = `r y[1]`) $\times$ (probability of $y_2$ = `r y[2]`) $\times \cdots \times$ (probability of $y_{100}$ = `r y[100]`) 
+
+
+$$
+L(\lambda) = \Pi Pois(y_i | \lambda)
+$$
+
+$$
+logL(\lambda) = \Sigma log(Pois(y_i | \lambda))
+$$
+
+
+```{r, echo=FALSE, fig.height=14}
+
+lambda_ <- seq(1.5, by = 0.4, length  = 9)
+dat <- sapply(lambda_, function(x) dpois(xx, x)) %>%
+  as_tibble
+
+names(dat) <- str_c("lambda = ", lambda_) 
+#names(dat) <- mean_
+
+like1 <- tibble(lambda = str_c("lambda = ", lambda_)) %>%
+  mutate(lambda = factor(lambda, 
+                       levels = str_c("lambda = ", lambda_) )) %>%
+  mutate(logL = sapply(lambda_, 
+                       function(x) dpois(y, x, log = TRUE)) %>%
+                       apply(., 2, sum) %>%
+                       round(0))
+
+dat_hist <- tibble(logL = like1$logL %>% rep(., each = N)) %>%
+  mutate(y = rep(y, 9)) %>%
+  mutate(lambda = like1$lambda %>% rep(., each = N))
+
+
+dat %>%
+  mutate(xx = xx) %>%
+  pivot_longer(1:length(lambda_), names_to = "lambda", values_to = "p") %>%
+  mutate(lambda = factor(lambda, 
+                       levels = str_c("lambda = ", lambda_) )) %>%
+  ggplot(.) +
+  geom_line(aes(x = xx, y = p * 100), lty = 2) +
+  geom_point(aes(x = xx, y = p * 100)) +
+  geom_histogram(data = dat_hist, aes(x = y)) +
+  geom_text(data = like1, aes(x = 5, y = 30, label = str_c("logL = ", logL))) +
+  facet_wrap( ~ lambda, ncol = 3) +
+  xlim(0, 8) +
+  xlab("") +
+  ylab("")
+
+```
+
+### Analytical approaches
+
+- Maximum likelihood estimation
+  - Generalized linear models (GLMs)
+
+```{r, echo=FALSE}
+lambda_seq <- seq(0.1, 10, length = 100)
+logL <- sapply(lambda_seq, function(x)dpois(y, x, log = TRUE)) %>%
+  apply(., 2, sum)
+
+
+tibble(lambda = lambda_seq, logL) %>%
+  ggplot(., aes(x = lambda, y = logL)) +
+  geom_line(col = "blue") +
+  geom_segment(aes(x = mean(y), xend = mean(y), 
+                   y = min(logL),
+                   yend = dpois(y, mean(y), log = TRUE) %>% sum),
+              arrow = arrow(length = unit(0.03, "npc"))
+  ) +
+  geom_text(aes(x = 5, y = -600), 
+            label = str_c("lambda = ", mean(y)))
+```
+
+
+### Simulation approaches (check)
+
+- Markov chain Monte Carlo (MCMC)
+  - Bayesian
+
+```{r}
+######## Metropolis algorithm ################
+
+proposalfunction <- function(param){
+    rpois(1, param)
+}
+
+posterior <- function(param){
+    dpois(y, param, log = TRUE) %>% sum
+}
+
+run_metropolis_MCMC <- function(startvalue, iterations){
+#    chain = array(dim = c(iterations+1,3))
+#    chain[1,] = startvalue
+   chain <- NULL
+   chain[1] <- startvalue
+    for (i in 1:iterations){
+        proposal = proposalfunction(chain[i])
+        
+        probab = exp(posterior(proposal) - posterior(chain[i]))
+        if (runif(1) < probab){
+            chain[i+1] = proposal
+        }else{
+            chain[i+1] = chain[i]
+        }
+    }
+    return(chain)
+}
+
+chain <- run_metropolis_MCMC(100, 100)
+tibble(x = chain, y = chain) %>%
+  ggplot(., aes(x = x, y = y)) +
+  geom_point()
+
+```
+
+
+![](images/Hplt5.gif)
+
+
+## Linear models (LMs)
+
+- Models assume normal distributions in their error terms.
+
+$$
+y_i \sim N(\beta_0 + \beta_1 x_i, \sigma) \\
+$$
+
+- or
+
+$$
+y_i = \beta_0 + \beta_1 x_i +\epsilon_i \\
+\epsilon_i \sim N(0, \sigma)
+$$
+
+## Generalized Linear models (GLMs)
+
+- Models assume exponential family distributions in their error terms.
+
+$$
+log\lambda_i = \beta_0 + \beta_1 x_i \\
+y_i \sim Pois(\lambda_i)
+$$
+
+
+## Generalized Linear mixed models (GLMMs)
+
+- Models assume exponential family distributions in their error terms 
+- Error terms also have independent different means among groups.
+
+$$
+y_{ij} = \beta_0 + \beta_1 x_{ij} +\epsilon_i + r_j\\
+\epsilon_i \sim N(0, \sigma) \\
+r_j \sim N(0, \phi)
+$$
+
