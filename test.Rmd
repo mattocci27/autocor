@@ -44,24 +44,47 @@ summary(fit2)
 
 ## Exercise 
 
-- Can you make a raster figure for $\epsilon$? 
-    - `fit1$fit$residuals` is a vector of $\epsilon$.
-    - What does this figure mean?  
-```{r, echo=TRUE, eval=FALSE}
+```{r, echo=TRUE, eval=TRUE}
 d2 <- d %>%
-  mutate(trait2 = fit1$fit$residuals) 
+  mutate(pred1 = fit1$fit$fitted.values) %>%
+  mutate(res1 = fit1$fit$residuals) %>%
+  mutate(pred2 = fit2$fit$fitted.values) %>%
+  mutate(res2 = fit2$fit$residuals) 
 
-ggplot(d2, aes(x = x, y = y, fill = trait2)) +
+ggplot(d2, aes(x = x, y = y, fill = pred1)) +
     geom_raster()
 ```
-- Can you make a violin plot or box plot for $\epsilon$? 
-    - `geom_violin`, `geom_boxplot`
-    - What does this figure mean?  
 
-```{r, echo=TRUE, eval=FALSE}
+- Predicitons (expected trait means) that account for the spatial autocorrleation.
+- The pattern is smoother than the observation.
+```{r, echo=TRUE, eval=TRUE}
+ggplot(d2, aes(x = x, y = y, fill = res1)) +
+    geom_raster()
+```
+
+- Residuals (trait deviation from plot means) that were not explained by the spatial autocorrleation.
+```{r, echo=FALSE, eval=FALSE}
+ggplot(d2, aes(x = x, y = y, fill = pred2)) +
+    geom_raster()
+```
+```{r, echo=FALSE, eval=FALSE}
+ggplot(d2, aes(x = x, y = y, fill = res2)) +
+    geom_raster()
+```
+
+```{r, echo=TRUE, eval=TRUE}
 d2 %>%
-  ggplot(., aes(x = hab, y = trait2, col = hab)) +
+  ggplot(., aes(x = hab, y = pred1, col = hab)) +
   geom_violin() +
   geom_jitter(width = 0.2)
-
 ```
+
+- Ridge sites have grater trait values 
+```{r, echo=TRUE, eval=TRUE}
+d2 %>%
+  ggplot(., aes(x = hab, y = res1, col = hab)) +
+  geom_violin() +
+  geom_jitter(width = 0.2)
+```
+
+- Ridge sites have greater trait values after removing the spatial autocorrleation.

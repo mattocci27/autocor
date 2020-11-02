@@ -49,29 +49,15 @@ library(spdep)
 ![](./images/secondorderrookqueen.jpg)
 
 - Let's condier maps with some environmental variables (e.g., soil N, soil moisture...).
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 library(spdep)
-library(Matrix)
 
 set.seed(1234)
 N <- 50
 x <- seq(1, 25)
 y <- seq(1, 25)
-
-nb <- cell2nb(length(x),length(y), type = "queen")
-W <- nb2listw(nb, zero.policy = TRUE, style = "W")
-B <- nb2mat(nb, zero.policy = TRUE, style = "W")
-
 #z <- matrix(numeric(length(x) * length(y)), ncol = length(y))
 z <- matrix(rnorm(length(x) * length(y)), ncol = length(y))
-
-automean2<-function(metric){	
-#queen?equal weighting 1/8
-d.W<-nb2listw(d.nb, zero.policy=TRUE,style="W")
-#SAR
-a<-spautolm(metric~ 1,listw=d.W,na.action=na.omit)
-return(a$fit$fitted.values)
-}
 
 z0 <- z
 z2 <- z
@@ -117,7 +103,7 @@ ggplot(dat, aes(x = x, y = y, fill = z0)) +
 
 - Soil moisture (z0) are randomly distributed.
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 dat %>% 
   # cut the edges
   filter(x > 1) %>%
@@ -128,9 +114,9 @@ dat %>%
     geom_raster()
 ```
 
-- Soil moisture (z) can show aggreated patterns.
+- Soil moisture (z) can show aggregated patterns.
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 ggplot(dat, aes(x = x, y = y, fill = hab)) +
   geom_raster()
 ```
@@ -163,10 +149,11 @@ m + geom_density_2d()
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 dat2 <- dat %>%
-#  mutate(hab_dummy = ifelse(hab == "valley", 0, 1)) %>%
-  mutate(trait = rnorm(nrow(.), -2 * mu, 0.3)) # based on z 
+  mutate(hab_dummy = ifelse(hab == "valley", 0, 1)) %>%
+  mutate(trait = rnorm(nrow(.), -mu, 0.3)) # based on z 
+  #mutate(trait = rnorm(nrow(.), 2 * hab_dummy, 0.6)) # based on z 
 
 dat2 %>%
   dplyr::select(x, y, hab, trait) %>%
@@ -184,7 +171,7 @@ dat2 %>%
 - Is this because those traits are favored in ridge sites?
 - Is this just because neighbors have similar trait values (spatial autocorrelation)?
 
-# Models 
+# Spatial autoregressive models (SAR)
 
 ![](./images/weight.png)
 
@@ -221,11 +208,11 @@ $$
 
 
 $$
-y_1 = \rho * 1/3 (y_2 + y_4 + y_5) + \epsilon
+y_1 = \rho  1/3 (y_2 + y_4 + y_5) + \epsilon
 $$
 
 
-In general, spatial autocorrelaiton models take this kind of form.
+In general, autoregressive models take this kind of form.
 
 $$
 Y = X \beta + \rho W Y   + \epsilon
@@ -236,7 +223,9 @@ $$
 - $\beta$: Model parameters ($k \times l$)
 - $\rho$: Spatial autocorrelaiton parameter
 - $W$: Spatial weight matrix ($N \times N$)
-- $\epsilon$: errors ($N \times 1)
+- $\epsilon$: errors ($N \times 1$)
+
+Parameters, $\beta$, $\rho$, (variance of )$\epsilon$, can be esimated by maximum likelihood or Bayesian methods.
 
 # R examples
 
@@ -252,10 +241,13 @@ d <- read_csv("./data/trait_env.csv")
 d
 ```
 
+- Make a neighour list object to calcluate $W$.
+- $y_1$ is next to $y_2$, $y_4$, and $y_5$.
 ```{r, echo=TRUE}
 (nb <- cell2nb(length(unique(d$x)),length(unique(d$y)), type = "queen"))
 ```
 
+- Make a spatial weight object ($W$ but list in R) 
 ```{r, echo=TRUE}
 (W <- nb2listw(nb, zero.policy = TRUE, style = "W"))
 ```
@@ -274,20 +266,27 @@ summary(fit1)
 
 
 - Model with an environmetal predictor
+
 ```{r, echo=TRUE}
 fit2 <- spautolm(trait ~ hab, listw = W, data = d)
 
 summary(fit2)
 ```
+
 - lambda (rho) = `r fit2$lambda` indicates a weak positve spatial autocorrelaiton
 - Negative `habvalley` indicates valley sites have negative effects on trait values compared to ridge sites even after controlling spatial autocorrelaiton.
 
+
 ## Exercise 
 
-- Can you make a raster figure for $\epsilon$? 
+- Make a raster plot for $\epsilon$.
     - `fit1$fit$residuals` is a vector of $\epsilon$.
     - What does this figure mean?  
 
-- Can you make a violin plot or box plot for $\epsilon$? 
-    - `geom_violin`, `geom_boxplot`
+- Make a raster plot for $\rho W Y$.
+    - `fit1$fit$fitted.values` is a vector of $\rho W Y$.
     - What does this figure mean?  
+
+- Make violin plots or box plots for $\epsilon$ and $\rho W Y$.
+    - `geom_violin`, `geom_boxplot`
+    - What do those figures mean?  
